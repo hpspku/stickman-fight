@@ -130,24 +130,67 @@
 
         .voice-action {
             background: rgba(255, 255, 255, 0.1);
-            padding: 8px 5px;
-            border-radius: 5px;
+            padding: 15px 10px;
+            border-radius: 8px;
             color: #fff;
-            font-size: 0.8rem;
+            font-size: 1rem;
             text-align: center;
             border: 1px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: all 0.2s ease;
         }
 
-        .voice-action.active {
+        .voice-action:active, .voice-action.active {
             background: rgba(255, 215, 0, 0.5);
             border-color: #FFD700;
-            animation: pulse 0.3s ease;
+            transform: scale(0.95);
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+        .touch-controls {
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #4CAF50;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .touch-controls h3 {
+            color: #4CAF50;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .touch-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .touch-action {
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            padding: 20px 15px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            border: 2px solid #66BB6A;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.1s ease;
+        }
+
+        .touch-action:active {
+            background: linear-gradient(145deg, #388E3C, #2E7D32);
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .instructions {
@@ -256,12 +299,25 @@
         </div>
     </div>
 
+    <div class="touch-controls">
+        <h3>🎮 触摸控制（快速响应）</h3>
+        <div class="touch-actions">
+            <div class="touch-action" ontouchstart="handleTouch('forward', event)" onmousedown="handleTouch('forward', event)">⬅️ 前</div>
+            <div class="touch-action" ontouchstart="handleTouch('backward', event)" onmousedown="handleTouch('backward', event)">后 ➡️</div>
+            <div class="touch-action" ontouchstart="handleTouch('jump', event)" onmousedown="handleTouch('jump', event)">⬆️ 跳</div>
+            <div class="touch-action" ontouchstart="handleTouch('attack', event)" onmousedown="handleTouch('attack', event)">👊 打</div>
+        </div>
+        <p style="text-align: center; color: #aaa; margin-top: 10px; font-size: 0.9rem;">
+            点击按钮或使用声音控制，推荐触摸控制反应更快！
+        </p>
+    </div>
+
     <div class="instructions">
         <h3>🎮 操作说明</h3>
-        <p><strong>声音控制:</strong> 说出"前"、"后"、"跳"、"打"来控制火柴人</p>
-        <p><strong>关卡:</strong> 3个关卡，外星人越来越强！</p>
-        <p><strong>目标:</strong> 击败外星人进入下一关，通过全部3关获胜！</p>
-        <p>💡 提示：保持环境安静，清晰地说出指令</p>
+        <p><strong>🎤 声音控制:</strong> 说出"前"、"后"、"跳"、"打"</p>
+        <p><strong>👆 触摸控制:</strong> 点击绿色按钮（推荐，响应更快）</p>
+        <p><strong>🏆 关卡:</strong> 3个关卡，外星人越来越强！</p>
+        <p><strong>🎯 目标:</strong> 击败外星人进入下一关，通过全部3关获胜！</p>
     </div>
 
     <div class="overlay" id="resultOverlay">
@@ -284,7 +340,7 @@
         let voiceEnabled = false;
         let recognition = null;
         let lastCommandTime = 0;
-        const commandCooldown = 800; // 毫秒
+        const commandCooldown = 300; // 降低冷却时间到300毫秒
 
         // 外星人配置（每关更厉害）
         const alienConfigs = {
@@ -679,7 +735,7 @@
         // 声音识别
         function initVoiceRecognition() {
             if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert('您的浏览器不支持语音识别，请使用Chrome或Safari浏览器');
+                alert('您的浏览器不支持语音识别，请使用Chrome或Safari浏览器，或使用触摸控制');
                 return false;
             }
 
@@ -687,12 +743,17 @@
             recognition = new SpeechRecognition();
             recognition.lang = 'zh-CN';
             recognition.continuous = true;
-            recognition.interimResults = false;
+            recognition.interimResults = true; // 启用中间结果，提高响应速度
+            recognition.maxAlternatives = 1; // 只返回一个最佳结果
 
             recognition.onresult = (event) => {
-                const last = event.results.length - 1;
-                const command = event.results[last][0].transcript.trim();
-                processVoiceCommand(command);
+                const result = event.results[event.results.length - 1];
+                const command = result[0].transcript.trim();
+                
+                // 只在有新结果时处理
+                if (result.isFinal || command.length > 0) {
+                    processVoiceCommand(command);
+                }
             };
 
             recognition.onerror = (event) => {
@@ -704,7 +765,21 @@
 
             recognition.onend = () => {
                 if (voiceEnabled && gameRunning) {
-                    recognition.start();
+                    // 立即重启
+                    try {
+                        recognition.start();
+                    } catch (e) {
+                        // 如果重启失败，等待一小段时间
+                        setTimeout(() => {
+                            if (voiceEnabled && gameRunning) {
+                                try {
+                                    recognition.start();
+                                } catch (e) {
+                                    console.log('语音识别重启失败');
+                                }
+                            }
+                        }, 100);
+                    }
                 }
             };
 
@@ -901,6 +976,60 @@
             document.getElementById('resultOverlay').classList.remove('show');
         }
 
+        // 触摸控制处理函数
+        function handleTouch(action, event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            const now = Date.now();
+            if (now - lastCommandTime < commandCooldown) {
+                return;
+            }
+            lastCommandTime = now;
+
+            let detectedAction = '';
+
+            switch (action) {
+                case 'forward':
+                    player.moveForward();
+                    detectedAction = '向前';
+                    setTimeout(() => player.stop(), 200);
+                    break;
+                case 'backward':
+                    player.moveBackward();
+                    detectedAction = '向后';
+                    setTimeout(() => player.stop(), 200);
+                    break;
+                case 'jump':
+                    player.jump();
+                    detectedAction = '跳跃';
+                    break;
+                case 'attack':
+                    if (player.attack()) {
+                        checkAttackCollision(player, alien);
+                        detectedAction = '攻击';
+                    }
+                    break;
+            }
+
+            if (detectedAction) {
+                document.getElementById('detectedCommand').textContent = detectedAction;
+                
+                // 高亮语音动作显示
+                const actionMap = {
+                    '向前': 'action-forward',
+                    '向后': 'action-backward',
+                    '跳跃': 'action-jump',
+                    '攻击': 'action-attack'
+                };
+                const actionElement = document.getElementById(actionMap[detectedAction]);
+                if (actionElement) {
+                    actionElement.classList.add('active');
+                    setTimeout(() => actionElement.classList.remove('active'), 200);
+                }
+            }
+        }
+
         function nextLevel() {
             currentLevel++;
             if (currentLevel > maxLevels) {
@@ -909,7 +1038,7 @@
             
             resetLevel();
             
-            if (voiceEnabled && gameRunning) {
+            if (gameRunning) {
                 gameLoop();
             }
         }
@@ -934,12 +1063,20 @@
             drawBackground();
             player.draw();
             alien.draw();
+            
+            // 自动开始游戏循环
+            gameRunning = true;
+            gameLoop();
         }
 
         // 初始化游戏
         drawBackground();
         player.draw();
         alien.draw();
+        
+        // 自动开始游戏
+        gameRunning = true;
+        gameLoop();
     </script>
 </body>
 </html>
