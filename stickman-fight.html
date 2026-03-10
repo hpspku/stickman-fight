@@ -169,7 +169,7 @@
     </style>
 </head>
 <body>
-    <h1 class="game-title">⚔️ 火柴人比武 ⚔️</h1>
+    <h1 class="game-title">⚔️ 火柴人比武 👸⚔️</h1>
 
     <canvas id="gameCanvas" width="800" height="500"></canvas>
 
@@ -178,7 +178,7 @@
             🔴 玩家1: <span id="player1Health">100</span>
         </div>
         <div class="player-info player2">
-            🔵 玩家2: <span id="player2Health">100</span>
+            👸 玩家2 (公主): <span id="player2Health">100</span>
         </div>
     </div>
 
@@ -190,7 +190,7 @@
     <div class="instructions">
         <h3>🎮 操作说明</h3>
         <p><strong>玩家1 (红色):</strong> W/A/S/D 移动, 空格键 攻击</p>
-        <p><strong>玩家2 (蓝色):</strong> ↑/←/↓/→ 移动, Enter 键 攻击</p>
+        <p><strong>玩家2 (公主/蓝色):</strong> ↑/←/↓/→ 移动, Enter 键 攻击</p>
         <p>💡 攻击对手扣20点血，先击败对手者获胜！</p>
     </div>
 
@@ -208,7 +208,7 @@
 
         // 玩家类
         class Stickman {
-            constructor(x, y, color, controls) {
+            constructor(x, y, color, controls, isPrincess = false) {
                 this.x = x;
                 this.y = y;
                 this.width = 40;
@@ -225,6 +225,7 @@
                 this.attackCooldown = 0;
                 this.facingRight = color === '#FF6B6B';
                 this.animationFrame = 0;
+                this.isPrincess = isPrincess;
             }
 
             update() {
@@ -305,6 +306,38 @@
                 ctx.lineTo(bodyX + Math.sin(legAngle + Math.PI) * 15, bodyY + 90);
                 ctx.stroke();
 
+                // 公主的裙子
+                if (this.isPrincess) {
+                    ctx.beginPath();
+                    ctx.moveTo(bodyX - 15, bodyY + 60);
+                    ctx.lineTo(bodyX + 15, bodyY + 60);
+                    ctx.lineTo(bodyX + 20, bodyY + 90);
+                    ctx.lineTo(bodyX - 20, bodyY + 90);
+                    ctx.closePath();
+                    ctx.fillStyle = this.color;
+                    ctx.globalAlpha = 0.6;
+                    ctx.fill();
+                    ctx.globalAlpha = 1.0;
+                    ctx.stroke();
+
+                    // 公主皇冠
+                    ctx.beginPath();
+                    ctx.moveTo(bodyX - 10, bodyY);
+                    ctx.lineTo(bodyX - 8, bodyY - 8);
+                    ctx.lineTo(bodyX - 5, bodyY - 3);
+                    ctx.lineTo(bodyX, bodyY - 10);
+                    ctx.lineTo(bodyX + 5, bodyY - 3);
+                    ctx.lineTo(bodyX + 8, bodyY - 8);
+                    ctx.lineTo(bodyX + 10, bodyY);
+                    ctx.closePath();
+                    ctx.fillStyle = '#FFD700';
+                    ctx.fill();
+                    ctx.strokeStyle = '#FFA500';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.lineWidth = 4;
+                }
+
                 ctx.restore();
             }
 
@@ -343,8 +376,8 @@
         }
 
         // 创建玩家
-        let player1 = new Stickman(100, 350, '#FF6B6B', { left: 'KeyA', right: 'KeyD', jump: 'KeyW', attack: 'Space' });
-        let player2 = new Stickman(600, 350, '#4ECDC4', { left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp', attack: 'Enter' });
+        let player1 = new Stickman(100, 350, '#FF6B6B', { left: 'KeyA', right: 'KeyD', jump: 'KeyW', attack: 'Space' }, false);
+        let player2 = new Stickman(600, 350, '#4ECDC4', { left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp', attack: 'Enter' }, true);
 
         let gameRunning = false;
         let animationId;
@@ -444,8 +477,8 @@
             cancelAnimationFrame(animationId);
             gameRunning = false;
             
-            player1 = new Stickman(100, 350, '#FF6B6B', { left: 'KeyA', right: 'KeyD', jump: 'KeyW', attack: 'Space' });
-            player2 = new Stickman(600, 350, '#4ECDC4', { left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp', attack: 'Enter' });
+            player1 = new Stickman(100, 350, '#FF6B6B', { left: 'KeyA', right: 'KeyD', jump: 'KeyW', attack: 'Space' }, false);
+            player2 = new Stickman(600, 350, '#4ECDC4', { left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp', attack: 'Enter' }, true);
             
             updateHealthDisplay();
             
