@@ -2,116 +2,173 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>火柴人比武</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>火柴人大战外星人</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
             font-family: 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 100%);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
-            overflow: hidden;
+            padding: 10px;
+            overflow-x: hidden;
         }
 
         .game-title {
-            font-size: 3rem;
+            font-size: 1.8rem;
             color: #FFD700;
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-            margin-bottom: 20px;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            margin: 10px 0;
             font-weight: bold;
-            animation: titleGlow 2s ease-in-out infinite;
-        }
-
-        @keyframes titleGlow {
-            0%, 100% { text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); }
-            50% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.6); }
+            text-align: center;
         }
 
         #gameCanvas {
-            border: 4px solid #FFD700;
+            border: 3px solid #FFD700;
             border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+            background: #000;
+            max-width: 100%;
+            touch-action: none;
         }
 
         .game-info {
             display: flex;
-            gap: 30px;
-            margin-top: 20px;
+            gap: 15px;
+            margin-top: 10px;
             flex-wrap: wrap;
             justify-content: center;
+            width: 100%;
         }
 
-        .player-info {
+        .info-item {
             background: linear-gradient(145deg, rgba(75, 0, 130, 0.8), rgba(0, 206, 209, 0.6));
-            padding: 15px 30px;
-            border-radius: 10px;
+            padding: 10px 20px;
+            border-radius: 8px;
             border: 2px solid #FFD700;
             color: #FFD700;
-            font-size: 1.2rem;
+            font-size: 1rem;
             font-weight: bold;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .player-info.player1 {
-            border-color: #FF6B6B;
-        }
-
-        .player-info.player2 {
-            border-color: #4ECDC4;
+            text-align: center;
+            min-width: 100px;
         }
 
         .controls {
-            margin-top: 20px;
+            margin-top: 15px;
             text-align: center;
+            width: 100%;
         }
 
         .btn {
             background: linear-gradient(145deg, #FFD700, #FFA500);
             color: #1a1a2e;
             border: none;
-            padding: 15px 40px;
-            font-size: 1.2rem;
-            border-radius: 10px;
+            padding: 12px 30px;
+            font-size: 1rem;
+            border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
             font-weight: bold;
             margin: 5px;
-            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+            box-shadow: 0 3px 10px rgba(255, 215, 0, 0.4);
         }
 
         .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.6);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .voice-controls {
+            margin-top: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #FFD700;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .voice-controls h3 {
+            color: #FFD700;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .voice-status {
+            text-align: center;
+            color: #fff;
+            margin: 10px 0;
+            font-size: 1.1rem;
+        }
+
+        .voice-status .detected {
+            color: #00FF00;
+            font-weight: bold;
+            font-size: 1.3rem;
+        }
+
+        .voice-actions {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .voice-action {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 5px;
+            border-radius: 5px;
+            color: #fff;
+            font-size: 0.8rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .voice-action.active {
+            background: rgba(255, 215, 0, 0.5);
+            border-color: #FFD700;
+            animation: pulse 0.3s ease;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
         }
 
         .instructions {
-            margin-top: 20px;
+            margin-top: 15px;
             background: rgba(0, 0, 0, 0.7);
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
             color: #fff;
-            max-width: 600px;
+            width: 100%;
+            max-width: 500px;
         }
 
         .instructions h3 {
             color: #FFD700;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
         }
 
         .instructions p {
             margin: 5px 0;
-            line-height: 1.6;
+            line-height: 1.5;
+            font-size: 0.9rem;
         }
 
         .overlay {
@@ -120,7 +177,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.9);
             display: none;
             align-items: center;
             justify-content: center;
@@ -132,73 +189,87 @@
         }
 
         .result-content {
-            background: linear-gradient(145deg, #fff, #f8f8f8);
-            padding: 40px 60px;
-            border-radius: 30px;
+            background: linear-gradient(145deg, #1a1a2e, #2a2a4e);
+            padding: 30px 40px;
+            border-radius: 20px;
             text-align: center;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            animation: popIn 0.5s ease;
-            border: 5px solid #FFD700;
-        }
-
-        @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            border: 3px solid #FFD700;
+            max-width: 90%;
         }
 
         .result-icon {
-            font-size: 6rem;
-            margin-bottom: 20px;
+            font-size: 4rem;
+            margin-bottom: 15px;
         }
 
         .result-title {
-            font-size: 2.5rem;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: #FFD700;
+        }
+
+        .result-message {
+            color: #fff;
             margin-bottom: 20px;
-            color: #333;
+            font-size: 1rem;
         }
 
         @media (max-width: 768px) {
             .game-title {
-                font-size: 2rem;
+                font-size: 1.5rem;
             }
-            #gameCanvas {
-                width: 100%;
-                height: auto;
+            .voice-actions {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
 </head>
 <body>
-    <h1 class="game-title">⚔️ 火柴人比武 👸⚔️</h1>
+    <h1 class="game-title">👽 火柴人大战外星人 🛸</h1>
 
-    <canvas id="gameCanvas" width="800" height="500"></canvas>
+    <canvas id="gameCanvas" width="800" height="450"></canvas>
 
     <div class="game-info">
-        <div class="player-info player1">
-            🔴 玩家1: <span id="player1Health">100</span>
-        </div>
-        <div class="player-info player2">
-            👸 玩家2 (公主): <span id="player2Health">100</span>
-        </div>
+        <div class="info-item">🏆 关卡: <span id="level">1</span>/3</div>
+        <div class="info-item">❤️ 火柴人: <span id="playerHealth">100</span></div>
+        <div class="info-item">👽 外星人: <span id="alienHealth">100</span></div>
     </div>
 
     <div class="controls">
-        <button class="btn" onclick="startGame()">开始游戏</button>
-        <button class="btn" onclick="resetGame()">重新开始</button>
+        <button class="btn" id="startBtn" onclick="startVoiceControl()">开启声音控制</button>
+        <button class="btn" id="nextBtn" onclick="nextLevel()" style="display:none;">下一关</button>
+        <button class="btn" onclick="resetLevel()">重新开始</button>
+    </div>
+
+    <div class="voice-controls">
+        <h3>🎤 声音控制指令</h3>
+        <div class="voice-status">
+            状态: <span id="voiceStatus">未开启</span><br>
+            检测到: <span id="detectedCommand" class="detected">-</span>
+        </div>
+        <div class="voice-actions">
+            <div class="voice-action" id="action-forward">前 (向前)</div>
+            <div class="voice-action" id="action-backward">后 (向后)</div>
+            <div class="voice-action" id="action-jump">跳 (向上)</div>
+            <div class="voice-action" id="action-attack">打 (攻击)</div>
+        </div>
     </div>
 
     <div class="instructions">
         <h3>🎮 操作说明</h3>
-        <p><strong>玩家1 (红色):</strong> W/A/S/D 移动, 空格键 攻击</p>
-        <p><strong>玩家2 (公主/蓝色):</strong> ↑/←/↓/→ 移动, Enter 键 攻击</p>
-        <p>💡 攻击对手扣20点血，先击败对手者获胜！</p>
+        <p><strong>声音控制:</strong> 说出"前"、"后"、"跳"、"打"来控制火柴人</p>
+        <p><strong>关卡:</strong> 3个关卡，外星人越来越强！</p>
+        <p><strong>目标:</strong> 击败外星人进入下一关，通过全部3关获胜！</p>
+        <p>💡 提示：保持环境安静，清晰地说出指令</p>
     </div>
 
     <div class="overlay" id="resultOverlay">
         <div class="result-content">
-            <div class="result-icon" id="resultIcon">🏆</div>
-            <div class="result-title" id="resultTitle">玩家1 获胜！</div>
-            <button class="btn" onclick="closeOverlay()">再来一局</button>
+            <div class="result-icon" id="resultIcon">🎉</div>
+            <div class="result-title" id="resultTitle">关卡完成！</div>
+            <div class="result-message" id="resultMessage">准备好进入下一关了吗？</div>
+            <button class="btn" id="overlayBtn" onclick="closeOverlay()">继续</button>
         </div>
     </div>
 
@@ -206,26 +277,42 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // 玩家类
+        // 游戏状态
+        let currentLevel = 1;
+        const maxLevels = 3;
+        let gameRunning = false;
+        let voiceEnabled = false;
+        let recognition = null;
+        let lastCommandTime = 0;
+        const commandCooldown = 800; // 毫秒
+
+        // 外星人配置（每关更厉害）
+        const alienConfigs = {
+            1: { health: 100, speed: 3, attackDamage: 15, color: '#00FF00', size: 1.0 },
+            2: { health: 150, speed: 4, attackDamage: 20, color: '#FF00FF', size: 1.2 },
+            3: { health: 200, speed: 5, attackDamage: 25, color: '#FF0000', size: 1.5 }
+        };
+
+        // 火柴人类
         class Stickman {
-            constructor(x, y, color, controls, isPrincess = false) {
+            constructor(x, y) {
                 this.x = x;
                 this.y = y;
                 this.width = 40;
-                this.height = 100;
-                this.color = color;
-                this.controls = controls;
+                this.height = 90;
+                this.color = '#FFD700';
                 this.health = 100;
+                this.maxHealth = 100;
                 this.velocityX = 0;
                 this.velocityY = 0;
-                this.speed = 5;
-                this.jumpPower = -15;
+                this.speed = 6;
+                this.jumpPower = -18;
                 this.isJumping = false;
                 this.isAttacking = false;
                 this.attackCooldown = 0;
-                this.facingRight = color === '#FF6B6B';
+                this.facingRight = true;
                 this.animationFrame = 0;
-                this.isPrincess = isPrincess;
+                this.attackPower = 20;
             }
 
             update() {
@@ -250,13 +337,12 @@
                 }
 
                 // 动画帧更新
-                this.animationFrame += 0.1;
+                this.animationFrame += 0.15;
             }
 
             draw() {
                 ctx.save();
                 
-                // 身体
                 const bodyX = this.x + this.width / 2;
                 const bodyY = this.y;
                 
@@ -267,31 +353,37 @@
 
                 // 头部
                 ctx.beginPath();
-                ctx.arc(bodyX, bodyY + 15, 15, 0, Math.PI * 2);
+                ctx.arc(bodyX, bodyY + 15, 14, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
                 ctx.fill();
                 ctx.stroke();
 
+                // 眼睛
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(bodyX + (this.facingRight ? 5 : -5), bodyY + 12, 2, 0, Math.PI * 2);
+                ctx.fill();
+
                 // 身体躯干
                 ctx.beginPath();
-                ctx.moveTo(bodyX, bodyY + 30);
-                ctx.lineTo(bodyX, bodyY + 60);
+                ctx.moveTo(bodyX, bodyY + 29);
+                ctx.lineTo(bodyX, bodyY + 55);
                 ctx.stroke();
 
                 // 手臂（带动画）
                 const armAngle = Math.sin(this.animationFrame) * 0.3;
                 ctx.beginPath();
-                ctx.moveTo(bodyX, bodyY + 35);
-                ctx.lineTo(bodyX + Math.cos(armAngle + (this.facingRight ? 0.5 : -0.5)) * 20, bodyY + 50);
+                ctx.moveTo(bodyX, bodyY + 32);
+                ctx.lineTo(bodyX + Math.cos(armAngle + (this.facingRight ? 0.5 : -0.5)) * 18, bodyY + 47);
                 ctx.stroke();
 
                 // 攻击时的手臂
                 if (this.isAttacking) {
                     ctx.beginPath();
-                    ctx.moveTo(bodyX, bodyY + 35);
-                    ctx.lineTo(bodyX + (this.facingRight ? 50 : -50), bodyY + 45);
+                    ctx.moveTo(bodyX, bodyY + 32);
+                    ctx.lineTo(bodyX + (this.facingRight ? 45 : -45), bodyY + 42);
                     ctx.strokeStyle = '#FF0000';
-                    ctx.lineWidth = 6;
+                    ctx.lineWidth = 5;
                     ctx.stroke();
                     ctx.strokeStyle = this.color;
                     ctx.lineWidth = 4;
@@ -300,67 +392,257 @@
                 // 腿部（带动画）
                 const legAngle = Math.sin(this.animationFrame) * 0.5;
                 ctx.beginPath();
-                ctx.moveTo(bodyX, bodyY + 60);
-                ctx.lineTo(bodyX + Math.sin(legAngle) * 15, bodyY + 90);
-                ctx.moveTo(bodyX, bodyY + 60);
-                ctx.lineTo(bodyX + Math.sin(legAngle + Math.PI) * 15, bodyY + 90);
+                ctx.moveTo(bodyX, bodyY + 55);
+                ctx.lineTo(bodyX + Math.sin(legAngle) * 14, bodyY + 85);
+                ctx.moveTo(bodyX, bodyY + 55);
+                ctx.lineTo(bodyX + Math.sin(legAngle + Math.PI) * 14, bodyY + 85);
                 ctx.stroke();
-
-                // 公主的裙子
-                if (this.isPrincess) {
-                    ctx.beginPath();
-                    ctx.moveTo(bodyX - 15, bodyY + 60);
-                    ctx.lineTo(bodyX + 15, bodyY + 60);
-                    ctx.lineTo(bodyX + 20, bodyY + 90);
-                    ctx.lineTo(bodyX - 20, bodyY + 90);
-                    ctx.closePath();
-                    ctx.fillStyle = this.color;
-                    ctx.globalAlpha = 0.6;
-                    ctx.fill();
-                    ctx.globalAlpha = 1.0;
-                    ctx.stroke();
-
-                    // 公主皇冠
-                    ctx.beginPath();
-                    ctx.moveTo(bodyX - 10, bodyY);
-                    ctx.lineTo(bodyX - 8, bodyY - 8);
-                    ctx.lineTo(bodyX - 5, bodyY - 3);
-                    ctx.lineTo(bodyX, bodyY - 10);
-                    ctx.lineTo(bodyX + 5, bodyY - 3);
-                    ctx.lineTo(bodyX + 8, bodyY - 8);
-                    ctx.lineTo(bodyX + 10, bodyY);
-                    ctx.closePath();
-                    ctx.fillStyle = '#FFD700';
-                    ctx.fill();
-                    ctx.strokeStyle = '#FFA500';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                    ctx.lineWidth = 4;
-                }
 
                 ctx.restore();
             }
 
-            move(left, right, jump) {
-                this.velocityX = 0;
-                if (left) {
-                    this.velocityX = -this.speed;
-                    this.facingRight = false;
-                }
-                if (right) {
-                    this.velocityX = this.speed;
-                    this.facingRight = true;
-                }
-                if (jump && !this.isJumping) {
+            moveForward() {
+                this.velocityX = this.speed;
+                this.facingRight = true;
+            }
+
+            moveBackward() {
+                this.velocityX = -this.speed;
+                this.facingRight = false;
+            }
+
+            jump() {
+                if (!this.isJumping) {
                     this.velocityY = this.jumpPower;
                     this.isJumping = true;
                 }
             }
 
+            stop() {
+                this.velocityX = 0;
+            }
+
             attack() {
                 if (this.attackCooldown === 0) {
                     this.isAttacking = true;
-                    this.attackCooldown = 30;
+                    this.attackCooldown = 25;
+                    setTimeout(() => {
+                        this.isAttacking = false;
+                    }, 150);
+                    return true;
+                }
+                return false;
+            }
+
+            takeDamage(amount) {
+                this.health -= amount;
+                if (this.health < 0) this.health = 0;
+            }
+
+            reset() {
+                this.x = 100;
+                this.y = canvas.height - 20 - this.height;
+                this.health = this.maxHealth;
+                this.velocityX = 0;
+                this.velocityY = 0;
+                this.isJumping = false;
+                this.isAttacking = false;
+                this.attackCooldown = 0;
+            }
+        }
+
+        // 外星人类
+        class Alien {
+            constructor(config, x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 50 * config.size;
+                this.height = 60 * config.size;
+                this.color = config.color;
+                this.health = config.health;
+                this.maxHealth = config.health;
+                this.velocityX = 0;
+                this.velocityY = 0;
+                this.speed = config.speed;
+                this.jumpPower = -14;
+                this.isJumping = false;
+                this.isAttacking = false;
+                this.attackCooldown = 0;
+                this.attackDamage = config.attackDamage;
+                this.facingRight = false;
+                this.size = config.size;
+                this.animationFrame = 0;
+                this.aiTimer = 0;
+                this.aiState = 'idle'; // idle, chase, attack
+            }
+
+            update(player) {
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+
+                // 重力
+                this.velocityY += 0.8;
+
+                // 边界检测
+                if (this.x < 0) this.x = 0;
+                if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+                if (this.y + this.height > canvas.height - 20) {
+                    this.y = canvas.height - 20 - this.height;
+                    this.velocityY = 0;
+                    this.isJumping = false;
+                }
+
+                // 攻击冷却
+                if (this.attackCooldown > 0) {
+                    this.attackCooldown--;
+                }
+
+                // AI行为
+                this.aiTimer++;
+                if (this.aiTimer > 30) {
+                    this.aiTimer = 0;
+                    this.decideAI(player);
+                }
+
+                // 动画帧更新
+                this.animationFrame += 0.1;
+
+                // 持续执行当前AI状态
+                this.executeAI(player);
+            }
+
+            decideAI(player) {
+                const distance = Math.abs((player.x + player.width / 2) - (this.x + this.width / 2));
+                
+                if (distance < 80) {
+                    // 近距离，攻击
+                    this.aiState = 'attack';
+                } else if (distance < 300) {
+                    // 中距离，追逐
+                    this.aiState = 'chase';
+                } else {
+                    // 远距离，随机移动
+                    this.aiState = Math.random() < 0.5 ? 'chase' : 'idle';
+                }
+            }
+
+            executeAI(player) {
+                this.velocityX = 0;
+                
+                if (this.aiState === 'chase') {
+                    if (player.x > this.x) {
+                        this.velocityX = this.speed;
+                        this.facingRight = true;
+                    } else {
+                        this.velocityX = -this.speed;
+                        this.facingRight = false;
+                    }
+                    
+                    // 偶尔跳跃
+                    if (Math.random() < 0.02 && !this.isJumping) {
+                        this.velocityY = this.jumpPower;
+                        this.isJumping = true;
+                    }
+                } else if (this.aiState === 'attack') {
+                    if (this.attackCooldown === 0) {
+                        this.attack();
+                    }
+                }
+            }
+
+            draw() {
+                ctx.save();
+                
+                const bodyX = this.x + this.width / 2;
+                const bodyY = this.y;
+                const scale = this.size;
+                
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 3 * scale;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                // 外星人头部（椭圆形）
+                ctx.beginPath();
+                ctx.ellipse(bodyX, bodyY + 15 * scale, 18 * scale, 22 * scale, 0, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.stroke();
+
+                // 大眼睛
+                const eyeY = bodyY + 12 * scale;
+                const eyeSize = 6 * scale;
+                ctx.fillStyle = '#FFF';
+                ctx.beginPath();
+                ctx.ellipse(bodyX - 6 * scale, eyeY, eyeSize, eyeSize * 1.3, 0, 0, Math.PI * 2);
+                ctx.ellipse(bodyX + 6 * scale, eyeY, eyeSize, eyeSize * 1.3, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 瞳孔
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(bodyX - 6 * scale, eyeY, 3 * scale, 0, Math.PI * 2);
+                ctx.arc(bodyX + 6 * scale, eyeY, 3 * scale, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 天线（第2、3关）
+                if (currentLevel >= 2) {
+                    ctx.beginPath();
+                    ctx.moveTo(bodyX, bodyY - 7 * scale);
+                    ctx.lineTo(bodyX, bodyY - 20 * scale);
+                    ctx.stroke();
+                    
+                    // 天线球
+                    ctx.beginPath();
+                    ctx.arc(bodyX, bodyY - 22 * scale, 4 * scale, 0, Math.PI * 2);
+                    ctx.fillStyle = this.level === 3 ? '#FF0000' : '#00FF00';
+                    ctx.fill();
+                }
+
+                // 身体
+                ctx.beginPath();
+                ctx.moveTo(bodyX, bodyY + 35 * scale);
+                ctx.lineTo(bodyX, bodyY + 50 * scale);
+                ctx.stroke();
+
+                // 多条手臂（每关增加）
+                const armCount = currentLevel + 1;
+                for (let i = 0; i < armCount; i++) {
+                    const armAngle = Math.sin(this.animationFrame + i) * 0.3;
+                    const armOffset = (i - (armCount - 1) / 2) * 0.3;
+                    ctx.beginPath();
+                    ctx.moveTo(bodyX, bodyY + 38 * scale);
+                    ctx.lineTo(
+                        bodyX + Math.cos(armAngle + (this.facingRight ? 0.5 : -0.5) + armOffset) * 20 * scale,
+                        bodyY + 50 * scale + Math.sin(this.animationFrame + i) * 5
+                    );
+                    ctx.stroke();
+                }
+
+                // 腿部
+                const legAngle = Math.sin(this.animationFrame) * 0.4;
+                ctx.beginPath();
+                ctx.moveTo(bodyX, bodyY + 50 * scale);
+                ctx.lineTo(bodyX + Math.sin(legAngle) * 12 * scale, bodyY + 60 * scale);
+                ctx.moveTo(bodyX, bodyY + 50 * scale);
+                ctx.lineTo(bodyX + Math.sin(legAngle + Math.PI) * 12 * scale, bodyY + 60 * scale);
+                ctx.stroke();
+
+                // 攻击时效果
+                if (this.isAttacking) {
+                    ctx.beginPath();
+                    ctx.arc(bodyX + (this.facingRight ? 30 : -30) * scale, bodyY + 25 * scale, 15 * scale, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+
+            attack() {
+                if (this.attackCooldown === 0) {
+                    this.isAttacking = true;
+                    this.attackCooldown = 40 - currentLevel * 5; // 关卡越高攻击越快
                     setTimeout(() => {
                         this.isAttacking = false;
                     }, 200);
@@ -373,76 +655,200 @@
                 this.health -= amount;
                 if (this.health < 0) this.health = 0;
             }
+
+            reset(config) {
+                this.x = canvas.width - 150;
+                this.y = canvas.height - 20 - this.height;
+                this.health = config.health;
+                this.maxHealth = config.health;
+                this.velocityX = 0;
+                this.velocityY = 0;
+                this.isJumping = false;
+                this.isAttacking = false;
+                this.attackCooldown = 0;
+                this.aiTimer = 0;
+                this.aiState = 'idle';
+            }
         }
 
-        // 创建玩家
-        let player1 = new Stickman(100, 350, '#FF6B6B', { left: 'KeyA', right: 'KeyD', jump: 'KeyW', attack: 'Space' }, false);
-        let player2 = new Stickman(600, 350, '#4ECDC4', { left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp', attack: 'Enter' }, true);
-
-        let gameRunning = false;
+        // 创建角色
+        let player = new Stickman(100, 350);
+        let alien = new Alien(alienConfigs[1], canvas.width - 150, 350);
         let animationId;
 
-        // 按键状态
-        const keys = {};
-
-        document.addEventListener('keydown', (e) => {
-            keys[e.code] = true;
-            
-            if (e.code === 'Space' || e.code === 'Enter') {
-                e.preventDefault();
+        // 声音识别
+        function initVoiceRecognition() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert('您的浏览器不支持语音识别，请使用Chrome或Safari浏览器');
+                return false;
             }
-            
-            if (gameRunning) {
-                if (e.code === player1.controls.attack && player1.attack()) {
-                    checkAttackCollision(player1, player2);
+
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'zh-CN';
+            recognition.continuous = true;
+            recognition.interimResults = false;
+
+            recognition.onresult = (event) => {
+                const last = event.results.length - 1;
+                const command = event.results[last][0].transcript.trim();
+                processVoiceCommand(command);
+            };
+
+            recognition.onerror = (event) => {
+                console.log('语音识别错误:', event.error);
+                if (event.error === 'not-allowed') {
+                    document.getElementById('voiceStatus').textContent = '麦克风权限被拒绝';
                 }
-                if (e.code === player2.controls.attack && player2.attack()) {
-                    checkAttackCollision(player2, player1);
+            };
+
+            recognition.onend = () => {
+                if (voiceEnabled && gameRunning) {
+                    recognition.start();
+                }
+            };
+
+            return true;
+        }
+
+        function processVoiceCommand(command) {
+            const now = Date.now();
+            if (now - lastCommandTime < commandCooldown) {
+                return;
+            }
+            lastCommandTime = now;
+
+            const commandLower = command.toLowerCase();
+            let detectedAction = '';
+
+            if (commandLower.includes('前') || commandLower.includes('前进') || commandLower.includes('向左') || commandLower.includes('左边')) {
+                player.moveForward();
+                detectedAction = '向前';
+                setTimeout(() => player.stop(), 300);
+            } else if (commandLower.includes('后') || commandLower.includes('后退') || commandLower.includes('向右') || commandLower.includes('右边')) {
+                player.moveBackward();
+                detectedAction = '向后';
+                setTimeout(() => player.stop(), 300);
+            } else if (commandLower.includes('跳') || commandLower.includes('上')) {
+                player.jump();
+                detectedAction = '跳跃';
+            } else if (commandLower.includes('打') || commandLower.includes('攻击') || commandLower.includes('战') || commandLower.includes('揍')) {
+                if (player.attack()) {
+                    checkAttackCollision(player, alien);
+                    detectedAction = '攻击';
                 }
             }
-        });
 
-        document.addEventListener('keyup', (e) => {
-            keys[e.code] = false;
-        });
+            if (detectedAction) {
+                document.getElementById('detectedCommand').textContent = detectedAction;
+                
+                // 高亮对应动作
+                const actionMap = {
+                    '向前': 'action-forward',
+                    '向后': 'action-backward',
+                    '跳跃': 'action-jump',
+                    '攻击': 'action-attack'
+                };
+                const actionElement = document.getElementById(actionMap[detectedAction]);
+                if (actionElement) {
+                    actionElement.classList.add('active');
+                    setTimeout(() => actionElement.classList.remove('active'), 300);
+                }
+            }
+        }
+
+        function startVoiceControl() {
+            if (!initVoiceRecognition()) {
+                return;
+            }
+
+            voiceEnabled = true;
+            recognition.start();
+            document.getElementById('startBtn').textContent = '声音控制已开启';
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('voiceStatus').textContent = '正在监听...';
+            document.getElementById('voiceStatus').style.color = '#00FF00';
+
+            if (!gameRunning) {
+                gameRunning = true;
+                gameLoop();
+            }
+        }
+
+        function drawBackground() {
+            // 太空背景
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#0a0a1a');
+            gradient.addColorStop(0.5, '#1a1a3e');
+            gradient.addColorStop(1, '#2a2a4e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 星星
+            ctx.fillStyle = '#FFF';
+            for (let i = 0; i < 100; i++) {
+                const x = (i * 73) % canvas.width;
+                const y = (i * 47) % (canvas.height - 30);
+                const size = (i % 3) + 1;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 星球
+            ctx.beginPath();
+            ctx.arc(canvas.width - 100, 80, 40, 0, Math.PI * 2);
+            const planetGradient = ctx.createRadialGradient(canvas.width - 110, 70, 0, canvas.width - 100, 80, 40);
+            planetGradient.addColorStop(0, '#FF6B6B');
+            planetGradient.addColorStop(1, '#8B0000');
+            ctx.fillStyle = planetGradient;
+            ctx.fill();
+
+            // 地面
+            ctx.fillStyle = '#1a1a2a';
+            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+            
+            // 地面线条
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < canvas.width; i += 50) {
+                ctx.beginPath();
+                ctx.moveTo(i, canvas.height - 20);
+                ctx.lineTo(i + 25, canvas.height);
+                ctx.stroke();
+            }
+        }
 
         function checkAttackCollision(attacker, defender) {
-            const attackRange = 80;
+            const attackRange = 70;
             const attackerCenterX = attacker.x + attacker.width / 2;
             const defenderCenterX = defender.x + defender.width / 2;
             
             const distance = Math.abs(attackerCenterX - defenderCenterX);
             
-            if (distance < attackRange && Math.abs(attacker.y - defender.y) < 50) {
-                defender.takeDamage(20);
+            if (distance < attackRange && Math.abs(attacker.y - defender.y) < 60) {
+                defender.takeDamage(attacker.attackPower);
                 updateHealthDisplay();
                 
                 if (defender.health <= 0) {
-                    endGame(attacker === player1 ? '玩家1' : '玩家2');
+                    if (defender === alien) {
+                        // 外星人被击败
+                        if (currentLevel < maxLevels) {
+                            showResult('关卡完成！', '🎉', '外星人已被击败！准备好进入下一关了吗？', 'nextLevel');
+                        } else {
+                            showResult('🏆 全通关！', '🏆', '恭喜！你已击败所有外星人，拯救了地球！', 'resetGame');
+                        }
+                    } else {
+                        // 玩家被击败
+                        showResult('游戏结束', '💀', '火柴人被外星人击败了，再试一次吧！', 'resetLevel');
+                    }
                 }
             }
         }
 
         function updateHealthDisplay() {
-            document.getElementById('player1Health').textContent = player1.health;
-            document.getElementById('player2Health').textContent = player2.health;
-        }
-
-        function drawBackground() {
-            // 天空
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, '#87CEEB');
-            gradient.addColorStop(1, '#98FB98');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // 地面
-            ctx.fillStyle = '#8B4513';
-            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
-            
-            // 草地
-            ctx.fillStyle = '#228B22';
-            ctx.fillRect(0, canvas.height - 25, canvas.width, 5);
+            document.getElementById('playerHealth').textContent = player.health;
+            document.getElementById('alienHealth').textContent = alien.health;
         }
 
         function gameLoop() {
@@ -452,60 +858,88 @@
             // 绘制背景
             drawBackground();
             
-            // 更新玩家
-            player1.move(keys['KeyA'], keys['KeyD'], keys['KeyW']);
-            player2.move(keys['ArrowLeft'], keys['ArrowRight'], keys['ArrowUp']);
+            // 更新角色
+            player.update();
+            alien.update(player);
             
-            player1.update();
-            player2.update();
+            // 外星人攻击检测
+            if (alien.isAttacking && alien.attackCooldown === 40 - currentLevel * 5) {
+                checkAttackCollision(alien, player);
+            }
             
-            // 绘制玩家
-            player1.draw();
-            player2.draw();
+            // 绘制角色
+            player.draw();
+            alien.draw();
             
-            animationId = requestAnimationFrame(gameLoop);
-        }
-
-        function startGame() {
-            if (!gameRunning) {
-                gameRunning = true;
-                gameLoop();
+            if (gameRunning) {
+                animationId = requestAnimationFrame(gameLoop);
             }
         }
 
-        function resetGame() {
-            cancelAnimationFrame(animationId);
-            gameRunning = false;
-            
-            player1 = new Stickman(100, 350, '#FF6B6B', { left: 'KeyA', right: 'KeyD', jump: 'KeyW', attack: 'Space' }, false);
-            player2 = new Stickman(600, 350, '#4ECDC4', { left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp', attack: 'Enter' }, true);
-            
-            updateHealthDisplay();
-            
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBackground();
-            player1.draw();
-            player2.draw();
-        }
-
-        function endGame(winner) {
+        function showResult(title, icon, message, action) {
             gameRunning = false;
             cancelAnimationFrame(animationId);
             
-            document.getElementById('resultIcon').textContent = '🏆';
-            document.getElementById('resultTitle').textContent = `${winner} 获胜！`;
+            document.getElementById('resultIcon').textContent = icon;
+            document.getElementById('resultTitle').textContent = title;
+            document.getElementById('resultMessage').textContent = message;
+            document.getElementById('overlayBtn').onclick = () => {
+                closeOverlay();
+                if (action === 'nextLevel') {
+                    nextLevel();
+                } else if (action === 'resetGame') {
+                    currentLevel = 1;
+                    resetLevel();
+                } else {
+                    resetLevel();
+                }
+            };
             document.getElementById('resultOverlay').classList.add('show');
         }
 
         function closeOverlay() {
             document.getElementById('resultOverlay').classList.remove('show');
-            resetGame();
+        }
+
+        function nextLevel() {
+            currentLevel++;
+            if (currentLevel > maxLevels) {
+                currentLevel = 1;
+            }
+            
+            resetLevel();
+            
+            if (voiceEnabled && gameRunning) {
+                gameLoop();
+            }
+        }
+
+        function resetLevel() {
+            cancelAnimationFrame(animationId);
+            gameRunning = false;
+            
+            const config = alienConfigs[currentLevel];
+            player.reset();
+            alien.reset(config);
+            alien.size = config.size;
+            alien.color = config.color;
+            alien.speed = config.speed;
+            alien.attackDamage = config.attackDamage;
+            
+            document.getElementById('level').textContent = currentLevel;
+            document.getElementById('nextBtn').style.display = 'none';
+            updateHealthDisplay();
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            player.draw();
+            alien.draw();
         }
 
         // 初始化游戏
         drawBackground();
-        player1.draw();
-        player2.draw();
+        player.draw();
+        alien.draw();
     </script>
 </body>
 </html>
