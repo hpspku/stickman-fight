@@ -421,7 +421,8 @@
         <h3>🎤 实时语音控制</h3>
         <div class="voice-status">
             状态: <span id="voiceStatus">未开启</span><br>
-            检测到: <span id="detectedCommand" class="detected">-</span>
+            检测到: <span id="detectedCommand" class="detected">-</span><br>
+            音量: <span id="volumeLevel">0.00</span>
         </div>
         <div class="voice-actions">
             <div class="voice-action" id="action-forward">前 qián</div>
@@ -1040,18 +1041,26 @@
             const features = {
                 spectrum: [],
                 envelope: [],
-                duration: frameCount
+                duration: frameCount,
+                energy: 0
             };
 
             // 计算平均频谱
             const spectrumSize = dataFrames[0].length;
             const avgSpectrum = new Array(spectrumSize).fill(0);
 
+            let totalEnergy = 0;
+
             for (let i = 0; i < frameCount; i++) {
+                const frameEnergy = dataFrames[i].reduce((sum, val) => sum + val, 0);
+                totalEnergy += frameEnergy;
+
                 for (let j = 0; j < spectrumSize; j++) {
                     avgSpectrum[j] += dataFrames[i][j];
                 }
             }
+
+            features.energy = totalEnergy / frameCount / spectrumSize;
 
             for (let j = 0; j < spectrumSize; j++) {
                 avgSpectrum[j] = avgSpectrum[j] / frameCount;
@@ -1092,17 +1101,20 @@
 
         // 实时识别循环
         function realtimeRecognize() {
-            if (!voiceEnabled || !analyser) {
+            if (!voiceEnabled || !analyser || !audioDataArray) {
                 requestAnimationFrame(realtimeRecognize);
                 return;
             }
 
             analyser.getByteFrequencyData(audioDataArray);
 
-            // 检测是否有声音输入
+            // 检测是否有声音输入（计算前50个频率的平均值）
             const volume = audioDataArray.slice(0, 50).reduce((sum, val) => sum + val, 0) / 50 / 255;
 
-            if (volume > 0.15) {
+            // 更新音量显示
+            document.getElementById('volumeLevel').textContent = volume.toFixed(2);
+
+            if (volume > 0.12) { // 降低阈值
                 // 收集当前音频数据帧
                 if (!window.currentAudioBuffer) {
                     window.currentAudioBuffer = [];
@@ -1111,23 +1123,29 @@
                 window.currentAudioBuffer.push(Array.from(audioDataArray));
 
                 // 检测语音结束（音量降低）
-                if (window.currentAudioBuffer.length > 15) {
+                if (window.currentAudioBuffer.length > 10) {
                     const recentVolume = window.currentAudioBuffer.slice(-5).map(
                         frame => frame.slice(0, 50).reduce((sum, val) => sum + val, 0) / 50 / 255
                     );
                     const avgRecentVolume = recentVolume.reduce((a, b) => a + b, 0) / recentVolume.length;
 
-                    if (avgRecentVolume < 0.1) {
+                    if (avgRecentVolume < 0.08) { // 降低静音阈值
                         // 语音结束，进行识别
+                        console.log('检测到语音，开始识别...');
                         recognizeVoice(window.currentAudioBuffer);
                         window.currentAudioBuffer = null;
                     }
                 }
+            } else {
+                // 清理缓冲区
+                if (window.currentAudioBuffer && window.currentAudioBuffer.length > 0) {
+                    window.currentAudioBuffer = null;
+                }
             }
 
-            // 清理过时的缓冲区
-            if (window.currentAudioBuffer && window.currentAudioBuffer.length > 100) {
-                window.currentAudioBuffer = null;
+            // 限制缓冲区大小
+            if (window.currentAudioBuffer && window.currentAudioBuffer.length > 60) {
+                window.currentAudioBuffer = window.currentAudioBuffer.slice(-30);
             }
 
             requestAnimationFrame(realtimeRecognize);
@@ -1137,32 +1155,52 @@
         function recognizeVoice(audioFrames) {
             const now = Date.now();
             if (now - lastCommandTime < commandCooldown) {
+                console.log('冷却中，跳过识别');
                 return;
             }
 
             const features = extractVoiceFeatures(audioFrames);
-            if (!features) return;
+            if (!features) {
+                console.log('特征提取失败');
+                return;
+            }
+
+            console.log('提取到音频特征，开始比对...');
 
             // 与模板比对
             const commands = ['forward', 'backward', 'jump', 'attack'];
             let bestMatch = null;
             let bestScore = 0;
+            let scores = {};
 
             for (const cmd of commands) {
                 const templates = voiceTemplates[cmd];
+                if (!templates || templates.length === 0) continue;
+
+                let maxScoreForCmd = 0;
                 for (const template of templates) {
                     const score = compareFeatures(features, template);
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestMatch = cmd;
+                    if (score > maxScoreForCmd) {
+                        maxScoreForCmd = score;
                     }
+                }
+                scores[cmd] = maxScoreForCmd;
+
+                if (maxScoreForCmd > bestScore) {
+                    bestScore = maxScoreForCmd;
+                    bestMatch = cmd;
                 }
             }
 
-            // 阈值判定
-            if (bestScore > 0.6) {
+            console.log('识别得分:', scores, '最佳匹配:', bestMatch, '得分:', bestScore);
+
+            // 阈值判定（降低阈值以提高灵敏度）
+            if (bestScore > 0.4) {
+                console.log('识别成功:', bestMatch);
                 executeCommand(bestMatch);
                 lastCommandTime = now;
+            } else {
+                console.log('得分太低，不执行指令');
             }
         }
 
@@ -1170,16 +1208,23 @@
         function compareFeatures(features1, features2) {
             if (!features1 || !features2) return 0;
 
-            // 比较频谱
-            const spectrumScore = compareArrays(features1.spectrum, features2.spectrum);
+            // 比较频谱（只比较前200个频率，更有语音特征）
+            const spectrum1 = features1.spectrum.slice(0, 200);
+            const spectrum2 = features2.spectrum.slice(0, 200);
+            const spectrumScore = compareArrays(spectrum1, spectrum2);
 
             // 比较包络（归一化后）
             const env1 = normalizeArray(features1.envelope);
             const env2 = normalizeArray(features2.envelope);
             const envelopeScore = compareArrays(env1, env2);
 
-            // 综合得分
-            return (spectrumScore * 0.7 + envelopeScore * 0.3);
+            // 比较能量相似度
+            const energyDiff = Math.abs(features1.energy - features2.energy);
+            const maxEnergy = Math.max(features1.energy, features2.energy, 1);
+            const energyScore = 1 - (energyDiff / maxEnergy);
+
+            // 综合得分（降低频谱权重，提高包络权重）
+            return (spectrumScore * 0.5 + envelopeScore * 0.3 + energyScore * 0.2);
         }
 
         // 比较两个数组的相似度
@@ -1193,7 +1238,8 @@
                 sum += (arr1[i] + arr2[i]) / 2;
             }
 
-            return 1 - (diff / (sum + 1));
+            const similarity = sum > 0 ? 1 - (diff / sum) : 0;
+            return Math.max(0, similarity);
         }
 
         // 归一化数组
