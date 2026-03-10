@@ -528,6 +528,7 @@
         let microphone = null;
         let lastCommandTime = 0;
         const commandCooldown = 100; // 冷却时间100毫秒
+        let useFallbackMode = false; // 是否使用备选模式
 
         // 声纹特征存储
         let voiceTemplates = {
@@ -972,8 +973,12 @@
 
         // 录制指令声音
         function recordCommand(command) {
-            if (isRecording) return;
+            if (isRecording) {
+                console.log('正在录音中，忽略请求');
+                return;
+            }
 
+            console.log('开始录制:', command);
             isRecording = true;
             currentRecordingCommand = command;
             recordingStartTime = Date.now();
@@ -982,36 +987,78 @@
             const stepElement = document.getElementById(`step-${command}`);
             stepElement.classList.add('recording');
 
+            // 检查音频系统
+            if (!analyser || !audioDataArray) {
+                console.error('音频系统未就绪');
+                isRecording = false;
+                stepElement.classList.remove('recording');
+                alert('音频系统未就绪，请重新开始训练');
+                return;
+            }
+
             // 开始录音
             collectRecordingData();
         }
 
         // 收集录音数据
         function collectRecordingData() {
-            if (!isRecording || !analyser) return;
+            if (!isRecording || !analyser || !audioDataArray) {
+                console.log('录音停止');
+                return;
+            }
 
-            analyser.getByteFrequencyData(audioDataArray);
+            try {
+                analyser.getByteFrequencyData(audioDataArray);
 
-            // 保存当前帧的频谱特征
-            const frameData = Array.from(audioDataArray);
-            recordingData.push(frameData);
+                // 保存当前帧的频谱特征
+                const frameData = Array.from(audioDataArray);
+                recordingData.push(frameData);
 
-            // 录制500ms
-            if (Date.now() - recordingStartTime < 500) {
-                requestAnimationFrame(collectRecordingData);
-            } else {
-                finishRecording();
+                // 录制800ms
+                if (Date.now() - recordingStartTime < 800) {
+                    requestAnimationFrame(collectRecordingData);
+                } else {
+                    console.log('录音完成，数据帧数:', recordingData.length);
+                    finishRecording();
+                }
+            } catch (e) {
+                console.error('录音数据收集错误:', e);
+                isRecording = false;
+                const stepElement = document.getElementById(`step-${currentRecordingCommand}`);
+                if (stepElement) stepElement.classList.remove('recording');
             }
         }
 
         // 完成录制
         function finishRecording() {
+            console.log('完成录制:', currentRecordingCommand);
             isRecording = false;
             const command = currentRecordingCommand;
 
+            if (!recordingData || recordingData.length === 0) {
+                console.error('没有录制到数据');
+                alert('没有录制到声音，请重新录制');
+                const stepElement = document.getElementById(`step-${command}`);
+                if (stepElement) stepElement.classList.remove('recording');
+                currentRecordingCommand = null;
+                recordingData = [];
+                return;
+            }
+
             // 计算声纹特征（频谱统计）
             const features = extractVoiceFeatures(recordingData);
+            if (!features) {
+                console.error('特征提取失败');
+                alert('特征提取失败，请重新录制');
+                const stepElement = document.getElementById(`step-${command}`);
+                if (stepElement) stepElement.classList.remove('recording');
+                currentRecordingCommand = null;
+                recordingData = [];
+                return;
+            }
+
             voiceTemplates[command].push(features);
+            console.log(`指令 ${command} 已录制 ${voiceTemplates[command].length} 次`);
 
             // 更新UI
             const stepElement = document.getElementById(`step-${command}`);
@@ -1096,6 +1143,8 @@
 
         // 开始实时识别
         function startRealtimeRecognition() {
+            console.log('启动实时识别循环...');
+            window.currentAudioBuffer = null;
             realtimeRecognize();
         }
 
@@ -1106,46 +1155,51 @@
                 return;
             }
 
-            analyser.getByteFrequencyData(audioDataArray);
+            try {
+                analyser.getByteFrequencyData(audioDataArray);
 
-            // 检测是否有声音输入（计算前50个频率的平均值）
-            const volume = audioDataArray.slice(0, 50).reduce((sum, val) => sum + val, 0) / 50 / 255;
+                // 检测是否有声音输入（计算前50个频率的平均值）
+                const volume = audioDataArray.slice(0, 50).reduce((sum, val) => sum + val, 0) / 50 / 255;
 
-            // 更新音量显示
-            document.getElementById('volumeLevel').textContent = volume.toFixed(2);
+                // 更新音量显示
+                document.getElementById('volumeLevel').textContent = volume.toFixed(2);
 
-            if (volume > 0.12) { // 降低阈值
-                // 收集当前音频数据帧
-                if (!window.currentAudioBuffer) {
-                    window.currentAudioBuffer = [];
-                }
+                if (volume > 0.12) { // 降低阈值
+                    // 收集当前音频数据帧
+                    if (!window.currentAudioBuffer) {
+                        window.currentAudioBuffer = [];
+                    }
 
-                window.currentAudioBuffer.push(Array.from(audioDataArray));
+                    window.currentAudioBuffer.push(Array.from(audioDataArray));
 
-                // 检测语音结束（音量降低）
-                if (window.currentAudioBuffer.length > 10) {
-                    const recentVolume = window.currentAudioBuffer.slice(-5).map(
-                        frame => frame.slice(0, 50).reduce((sum, val) => sum + val, 0) / 50 / 255
-                    );
-                    const avgRecentVolume = recentVolume.reduce((a, b) => a + b, 0) / recentVolume.length;
+                    // 检测语音结束（音量降低）
+                    if (window.currentAudioBuffer.length > 10) {
+                        const recentVolume = window.currentAudioBuffer.slice(-5).map(
+                            frame => frame.slice(0, 50).reduce((sum, val) => sum + val, 0) / 50 / 255
+                        );
+                        const avgRecentVolume = recentVolume.reduce((a, b) => a + b, 0) / recentVolume.length;
 
-                    if (avgRecentVolume < 0.08) { // 降低静音阈值
-                        // 语音结束，进行识别
-                        console.log('检测到语音，开始识别...');
-                        recognizeVoice(window.currentAudioBuffer);
+                        if (avgRecentVolume < 0.08) { // 降低静音阈值
+                            // 语音结束，进行识别
+                            console.log('检测到语音，开始识别...');
+                            console.log('音频缓冲区长度:', window.currentAudioBuffer.length);
+                            recognizeVoice(window.currentAudioBuffer);
+                            window.currentAudioBuffer = null;
+                        }
+                    }
+                } else {
+                    // 清理缓冲区
+                    if (window.currentAudioBuffer && window.currentAudioBuffer.length > 0) {
                         window.currentAudioBuffer = null;
                     }
                 }
-            } else {
-                // 清理缓冲区
-                if (window.currentAudioBuffer && window.currentAudioBuffer.length > 0) {
-                    window.currentAudioBuffer = null;
-                }
-            }
 
-            // 限制缓冲区大小
-            if (window.currentAudioBuffer && window.currentAudioBuffer.length > 60) {
-                window.currentAudioBuffer = window.currentAudioBuffer.slice(-30);
+                // 限制缓冲区大小
+                if (window.currentAudioBuffer && window.currentAudioBuffer.length > 60) {
+                    window.currentAudioBuffer = window.currentAudioBuffer.slice(-30);
+                }
+            } catch (e) {
+                console.error('实时识别错误:', e);
             }
 
             requestAnimationFrame(realtimeRecognize);
@@ -1289,11 +1343,28 @@
 
         // 完成训练开始游戏
         function startGameAfterTraining() {
+            console.log('开始游戏，启动实时识别...');
             document.getElementById('voiceTraining').classList.remove('show');
             document.getElementById('startBtn').textContent = '声音控制已开启';
             document.getElementById('startBtn').disabled = true;
             document.getElementById('voiceStatus').textContent = '实时监听中...';
             document.getElementById('voiceStatus').style.color = '#00FF00';
+
+            // 确保音频上下文已创建
+            if (!audioContext) {
+                console.error('音频上下文未初始化');
+                alert('音频系统未正确初始化，请重新训练');
+                return;
+            }
+
+            if (!analyser) {
+                console.error('分析器未初始化');
+                alert('音频分析器未正确初始化，请重新训练');
+                return;
+            }
+
+            // 启动Web Speech API作为备选
+            initWebSpeechAPI();
 
             // 开始实时识别
             startRealtimeRecognition();
@@ -1301,6 +1372,51 @@
             if (!gameRunning) {
                 gameRunning = true;
                 gameLoop();
+            }
+
+            console.log('游戏已启动');
+        }
+
+        // 初始化Web Speech API作为备选
+        function initWebSpeechAPI() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.lang = 'zh-CN';
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.maxAlternatives = 1;
+
+                recognition.onresult = (event) => {
+                    const result = event.results[event.results.length - 1];
+                    const command = result[0].transcript.trim();
+
+                    if (command.length > 0) {
+                        console.log('Web Speech检测到:', command);
+                        processVoiceCommand(command);
+                    }
+                };
+
+                recognition.onerror = (event) => {
+                    console.log('Web Speech错误:', event.error);
+                };
+
+                recognition.onend = () => {
+                    if (voiceEnabled && gameRunning) {
+                        try {
+                            recognition.start();
+                        } catch (e) {
+                            console.log('Web Speech重启失败');
+                        }
+                    }
+                };
+
+                try {
+                    recognition.start();
+                    console.log('Web Speech API已启动');
+                } catch (e) {
+                    console.log('Web Speech启动失败:', e);
+                }
             }
         }
 
