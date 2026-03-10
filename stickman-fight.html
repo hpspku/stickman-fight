@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>火柴人比武</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .game-title {
+            font-size: 3rem;
+            color: #FFD700;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+            margin-bottom: 20px;
+            font-weight: bold;
+            animation: titleGlow 2s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); }
+            50% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.6); }
+        }
+
+        #gameCanvas {
+            border: 4px solid #FFD700;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(180deg, #87CEEB 0%, #98FB98 100%);
+        }
+
+        .game-info {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .player-info {
+            background: linear-gradient(145deg, rgba(75, 0, 130, 0.8), rgba(0, 206, 209, 0.6));
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 2px solid #FFD700;
+            color: #FFD700;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .player-info.player1 {
+            border-color: #FF6B6B;
+        }
+
+        .player-info.player2 {
+            border-color: #4ECDC4;
+        }
+
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .btn {
+            background: linear-gradient(145deg, #FFD700, #FFA500);
+            color: #1a1a2e;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            margin: 5px;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.6);
+        }
+
+        .instructions {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            color: #fff;
+            max-width: 600px;
+        }
+
+        .instructions h3 {
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+
+        .instructions p {
+            margin: 5px 0;
+            line-height: 1.6;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .overlay.show {
+            display: flex;
+        }
+
+        .result-content {
+            background: linear-gradient(145deg, #fff, #f8f8f8);
+            padding: 40px 60px;
+            border-radius: 30px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: popIn 0.5s ease;
+            border: 5px solid #FFD700;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .result-icon {
+            font-size: 6rem;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .game-title {
+                font-size: 2rem;
+            }
+            #gameCanvas {
+                width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="game-title">⚔️ 火柴人比武 ⚔️</h1>
+
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+    <div class="game-info">
+        <div class="player-info player1">
+            🔴 玩家1: <span id="player1Health">100</span>
+        </div>
+        <div class="player-info player2">
+            🔵 玩家2: <span id="player2Health">100</span>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="startGame()">开始游戏</button>
+        <button class="btn" onclick="resetGame()">重新开始</button>
+    </div>
+
+    <div class="instructions">
+        <h3>🎮 操作说明</h3>
+        <p><strong>玩家1 (红色):</strong> W/A/S/D 移动, 空格键 攻击</p>
+        <p><strong>玩家2 (蓝色):</strong> ↑/←/↓/→ 移动, Enter 键 攻击</p>
+        <p>💡 攻击对手扣20点血，先击败对手者获胜！</p>
+    </div>
+
+    <div class="overlay" id="resultOverlay">
+        <div class="result-content">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <div class="result-title" id="resultTitle">玩家1 获胜！</div>
+            <button class="btn" onclick="closeOverlay()">再来一局</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 玩家类
+        class Stickman {
+            constructor(x, y, color, controls) {
+                this.x = x;
+                this.y = y;
+                this.width = 40;
+                this.height = 100;
+                this.color = color;
+                this.controls = controls;
+                this.health = 100;
+                this.velocityX = 0;
+                this.velocityY = 0;
+                this.speed = 5;
+                this.jumpPower = -15;
+                this.isJumping = false;
+                this.isAttacking = false;
+                this.attackCooldown = 0;
+                this.facingRight = color === '#FF6B6B';
+                this.animationFrame = 0;
+            }
+
+            update() {
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+
+                // 重力
+                this.velocityY += 0.8;
+
+                // 边界检测
+                if (this.x < 0) this.x = 0;
+                if (this.x + this.width > canvas.width) this.x = canvas.width - this.width;
+                if (this.y + this.height > canvas.height - 20) {
+                    this.y = canvas.height - 20 - this.height;
+                    this.velocityY = 0;
+                    this.isJumping = false;
+                }
+
+                // 攻击冷却
+                if (this.attackCooldown > 0) {
+                    this.attackCooldown--;
+                }
+
+                // 动画帧更新
+                this.animationFrame += 0.1;
+            }
+
+            draw() {
+                ctx.save();
+                
+                // 身体
+                const bodyX = this.x + this.width / 2;
+                const bodyY = this.y;
+                
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                // 头部
+                ctx.beginPath();
+                ctx.arc(bodyX, bodyY + 15, 15, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.stroke();
+
+                // 身体躯干
+                ctx.beginPath();
+                ctx.moveTo(bodyX, bodyY + 30);
+                ctx.lineTo(bodyX, bodyY + 60);
+                ctx.stroke();
+
+                // 手臂（带动画）
+                const armAngle = Math.sin(this.animationFrame) * 0.3;
+                ctx.beginPath();
+                ctx.moveTo(bodyX, bodyY + 35);
+                ctx.lineTo(bodyX + Math.cos(armAngle + (this.facingRight ? 0.5 : -0.5)) * 20, bodyY + 50);
+                ctx.stroke();
+
+                // 攻击时的手臂
+                if (this.isAttacking) {
+                    ctx.beginPath();
+                    ctx.moveTo(bodyX, bodyY + 35);
+                    ctx.lineTo(bodyX + (this.facingRight ? 50 : -50), bodyY + 45);
+                    ctx.strokeStyle = '#FF0000';
+                    ctx.lineWidth = 6;
+                    ctx.stroke();
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 4;
+                }
+
+                // 腿部（带动画）
+                const legAngle = Math.sin(this.animationFrame) * 0.5;
+                ctx.beginPath();
+                ctx.moveTo(bodyX, bodyY + 60);
+                ctx.lineTo(bodyX + Math.sin(legAngle) * 15, bodyY + 90);
+                ctx.moveTo(bodyX, bodyY + 60);
+                ctx.lineTo(bodyX + Math.sin(legAngle + Math.PI) * 15, bodyY + 90);
+                ctx.stroke();
+
+                ctx.restore();
+            }
+
+            move(left, right, jump) {
+                this.velocityX = 0;
+                if (left) {
+                    this.velocityX = -this.speed;
+                    this.facingRight = false;
+                }
+                if (right) {
+                    this.velocityX = this.speed;
+                    this.facingRight = true;
+                }
+                if (jump && !this.isJumping) {
+                    this.velocityY = this.jumpPower;
+                    this.isJumping = true;
+                }
+            }
+
+            attack() {
+                if (this.attackCooldown === 0) {
+                    this.isAttacking = true;
+                    this.attackCooldown = 30;
+                    setTimeout(() => {
+                        this.isAttacking = false;
+                    }, 200);
+                    return true;
+                }
+                return false;
+            }
+
+            takeDamage(amount) {
+                this.health -= amount;
+                if (this.health < 0) this.health = 0;
+            }
+        }
+
+        // 创建玩家
+        let player1 = new Stickman(100, 350, '#FF6B6B', { left: 'KeyA', right: 'KeyD', jump: 'KeyW', attack: 'Space' });
+        let player2 = new Stickman(600, 350, '#4ECDC4', { left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp', attack: 'Enter' });
+
+        let gameRunning = false;
+        let animationId;
+
+        // 按键状态
+        const keys = {};
+
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            
+            if (e.code === 'Space' || e.code === 'Enter') {
+                e.preventDefault();
+            }
+            
+            if (gameRunning) {
+                if (e.code === player1.controls.attack && player1.attack()) {
+                    checkAttackCollision(player1, player2);
+                }
+                if (e.code === player2.controls.attack && player2.attack()) {
+                    checkAttackCollision(player2, player1);
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.code] = false;
+        });
+
+        function checkAttackCollision(attacker, defender) {
+            const attackRange = 80;
+            const attackerCenterX = attacker.x + attacker.width / 2;
+            const defenderCenterX = defender.x + defender.width / 2;
+            
+            const distance = Math.abs(attackerCenterX - defenderCenterX);
+            
+            if (distance < attackRange && Math.abs(attacker.y - defender.y) < 50) {
+                defender.takeDamage(20);
+                updateHealthDisplay();
+                
+                if (defender.health <= 0) {
+                    endGame(attacker === player1 ? '玩家1' : '玩家2');
+                }
+            }
+        }
+
+        function updateHealthDisplay() {
+            document.getElementById('player1Health').textContent = player1.health;
+            document.getElementById('player2Health').textContent = player2.health;
+        }
+
+        function drawBackground() {
+            // 天空
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#87CEEB');
+            gradient.addColorStop(1, '#98FB98');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 地面
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(0, canvas.height - 20, canvas.width, 20);
+            
+            // 草地
+            ctx.fillStyle = '#228B22';
+            ctx.fillRect(0, canvas.height - 25, canvas.width, 5);
+        }
+
+        function gameLoop() {
+            // 清空画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制背景
+            drawBackground();
+            
+            // 更新玩家
+            player1.move(keys['KeyA'], keys['KeyD'], keys['KeyW']);
+            player2.move(keys['ArrowLeft'], keys['ArrowRight'], keys['ArrowUp']);
+            
+            player1.update();
+            player2.update();
+            
+            // 绘制玩家
+            player1.draw();
+            player2.draw();
+            
+            animationId = requestAnimationFrame(gameLoop);
+        }
+
+        function startGame() {
+            if (!gameRunning) {
+                gameRunning = true;
+                gameLoop();
+            }
+        }
+
+        function resetGame() {
+            cancelAnimationFrame(animationId);
+            gameRunning = false;
+            
+            player1 = new Stickman(100, 350, '#FF6B6B', { left: 'KeyA', right: 'KeyD', jump: 'KeyW', attack: 'Space' });
+            player2 = new Stickman(600, 350, '#4ECDC4', { left: 'ArrowLeft', right: 'ArrowRight', jump: 'ArrowUp', attack: 'Enter' });
+            
+            updateHealthDisplay();
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+            player1.draw();
+            player2.draw();
+        }
+
+        function endGame(winner) {
+            gameRunning = false;
+            cancelAnimationFrame(animationId);
+            
+            document.getElementById('resultIcon').textContent = '🏆';
+            document.getElementById('resultTitle').textContent = `${winner} 获胜！`;
+            document.getElementById('resultOverlay').classList.add('show');
+        }
+
+        function closeOverlay() {
+            document.getElementById('resultOverlay').classList.remove('show');
+            resetGame();
+        }
+
+        // 初始化游戏
+        drawBackground();
+        player1.draw();
+        player2.draw();
+    </script>
+</body>
+</html>
