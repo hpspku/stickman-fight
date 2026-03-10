@@ -193,6 +193,138 @@
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
+        /* 声纹录制界面 */
+        .voice-training {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .voice-training.show {
+            display: flex;
+        }
+
+        .training-title {
+            font-size: 2rem;
+            color: #FFD700;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .training-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .training-step {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #333;
+            transition: all 0.3s ease;
+        }
+
+        .training-step.completed {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .training-step.recording {
+            border-color: #FFD700;
+            background: rgba(255, 215, 0, 0.2);
+            animation: pulse 1s infinite;
+        }
+
+        .training-step-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .step-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #333;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .training-step.completed .step-number {
+            background: #4CAF50;
+        }
+
+        .step-command {
+            font-size: 1.5rem;
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        .step-status {
+            margin-left: auto;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .training-step.completed .step-status {
+            color: #4CAF50;
+        }
+
+        .recording-indicator {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #f44336;
+            margin-left: 10px;
+            display: none;
+        }
+
+        .training-step.recording .recording-indicator {
+            display: block;
+            animation: pulse 0.5s infinite;
+        }
+
+        .training-btn {
+            background: linear-gradient(145deg, #FFD700, #FFA500);
+            color: #1a1a2e;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 30px;
+            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .training-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .training-instruction {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+        }
+
         .instructions {
             margin-top: 15px;
             background: rgba(0, 0, 0, 0.7);
@@ -280,7 +412,7 @@
     </div>
 
     <div class="controls">
-        <button class="btn" id="startBtn" onclick="startVoiceControl()">开启声音控制</button>
+        <button class="btn" id="startBtn" onclick="startVoiceTraining()">声纹训练</button>
         <button class="btn" id="nextBtn" onclick="nextLevel()" style="display:none;">下一关</button>
         <button class="btn" onclick="resetLevel()">重新开始</button>
     </div>
@@ -332,6 +464,54 @@
         </div>
     </div>
 
+    <!-- 声纹录制界面 -->
+    <div class="voice-training" id="voiceTraining">
+        <div class="training-title">🎤 声纹训练</div>
+        <div class="training-instruction">
+            请按顺序录制以下4个指令的声音特征<br>
+            每个指令说2-3次，系统会自动学习
+        </div>
+        <div class="training-steps" id="trainingSteps">
+            <div class="training-step" id="step-forward">
+                <div class="training-step-header">
+                    <span class="step-number">1</span>
+                    <span class="step-command">前 qián</span>
+                    <span class="recording-indicator"></span>
+                    <span class="step-status" id="status-forward">待录制</span>
+                </div>
+                <button class="btn" onclick="recordCommand('forward')">录制</button>
+            </div>
+            <div class="training-step" id="step-backward">
+                <div class="training-step-header">
+                    <span class="step-number">2</span>
+                    <span class="step-command">后 hòu</span>
+                    <span class="recording-indicator"></span>
+                    <span class="step-status" id="status-backward">待录制</span>
+                </div>
+                <button class="btn" onclick="recordCommand('backward')">录制</button>
+            </div>
+            <div class="training-step" id="step-jump">
+                <div class="training-step-header">
+                    <span class="step-number">3</span>
+                    <span class="step-command">跳 tiào</span>
+                    <span class="recording-indicator"></span>
+                    <span class="step-status" id="status-jump">待录制</span>
+                </div>
+                <button class="btn" onclick="recordCommand('jump')">录制</button>
+            </div>
+            <div class="training-step" id="step-attack">
+                <div class="training-step-header">
+                    <span class="step-number">4</span>
+                    <span class="step-command">打 dǎ</span>
+                    <span class="recording-indicator"></span>
+                    <span class="step-status" id="status-attack">待录制</span>
+                </div>
+                <button class="btn" onclick="recordCommand('attack')">录制</button>
+            </div>
+        </div>
+        <button class="training-btn" id="startGameBtn" onclick="startGameAfterTraining()" disabled>完成训练，开始游戏</button>
+    </div>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -346,15 +526,19 @@
         let analyser = null;
         let microphone = null;
         let lastCommandTime = 0;
-        const commandCooldown = 150; // 冷却时间150毫秒
+        const commandCooldown = 100; // 冷却时间100毫秒
 
-        // 音频特征分析
-        let audioDataArray = null;
-        let previousVolume = 0;
-        let volumeHistory = [];
-        const historyLength = 10;
-        let isSpeaking = false;
-        let speakStartVolume = 0;
+        // 声纹特征存储
+        let voiceTemplates = {
+            forward: [],
+            backward: [],
+            jump: [],
+            attack: []
+        };
+        let isRecording = false;
+        let currentRecordingCommand = null;
+        let recordingStartTime = 0;
+        let recordingData = [];
 
         // 外星人配置（每关更厉害）
         const alienConfigs = {
@@ -745,189 +929,337 @@
         let player = new Stickman(100, 350);
         let alien = new Alien(alienConfigs[1], canvas.width - 150, 350);
         let animationId;
+        let audioDataArray = null;
 
-        // 声音识别
-        function initVoiceRecognition() {
-            // 尝试使用 Web Speech API 作为备用
-            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                recognition = new SpeechRecognition();
-                recognition.lang = 'zh-CN';
-                recognition.continuous = true;
-                recognition.interimResults = true;
-                recognition.maxAlternatives = 1;
-
-                recognition.onresult = (event) => {
-                    const result = event.results[event.results.length - 1];
-                    const command = result[0].transcript.trim();
-                    if (result.isFinal || command.length > 0) {
-                        processVoiceCommand(command);
-                    }
-                };
-
-                recognition.onerror = (event) => {
-                    console.log('语音识别错误:', event.error);
-                };
-
-                recognition.onend = () => {
-                    if (voiceEnabled && gameRunning) {
-                        try {
-                            recognition.start();
-                        } catch (e) {}
-                    }
-                };
-            }
-
-            return true;
-        }
-
-        function initAudioAnalysis() {
+        // 初始化音频系统
+        function initAudioSystem() {
             if (audioContext) return;
 
             try {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 analyser = audioContext.createAnalyser();
-                analyser.fftSize = 256;
+                analyser.fftSize = 512;
                 audioDataArray = new Uint8Array(analyser.frequencyBinCount);
 
-                navigator.mediaDevices.getUserMedia({ audio: true })
+                return navigator.mediaDevices.getUserMedia({ audio: true })
                     .then(stream => {
                         microphone = audioContext.createMediaStreamSource(stream);
                         microphone.connect(analyser);
-                        analyzeAudio();
+                        return true;
                     })
                     .catch(err => {
                         console.log('麦克风访问失败:', err);
-                        document.getElementById('voiceStatus').textContent = '麦克风访问失败';
+                        alert('无法访问麦克风，请检查权限设置');
+                        return false;
                     });
             } catch (err) {
-                console.log('音频分析初始化失败:', err);
+                console.log('音频系统初始化失败:', err);
+                alert('音频系统初始化失败');
+                return false;
             }
         }
 
-        function analyzeAudio() {
+        // 声纹训练 - 开始
+        function startVoiceTraining() {
+            initAudioSystem().then(success => {
+                if (success) {
+                    document.getElementById('voiceTraining').classList.add('show');
+                    voiceEnabled = true;
+                }
+            });
+        }
+
+        // 录制指令声音
+        function recordCommand(command) {
+            if (isRecording) return;
+
+            isRecording = true;
+            currentRecordingCommand = command;
+            recordingStartTime = Date.now();
+            recordingData = [];
+
+            const stepElement = document.getElementById(`step-${command}`);
+            stepElement.classList.add('recording');
+
+            // 开始录音
+            collectRecordingData();
+        }
+
+        // 收集录音数据
+        function collectRecordingData() {
+            if (!isRecording || !analyser) return;
+
+            analyser.getByteFrequencyData(audioDataArray);
+
+            // 保存当前帧的频谱特征
+            const frameData = Array.from(audioDataArray);
+            recordingData.push(frameData);
+
+            // 录制500ms
+            if (Date.now() - recordingStartTime < 500) {
+                requestAnimationFrame(collectRecordingData);
+            } else {
+                finishRecording();
+            }
+        }
+
+        // 完成录制
+        function finishRecording() {
+            isRecording = false;
+            const command = currentRecordingCommand;
+
+            // 计算声纹特征（频谱统计）
+            const features = extractVoiceFeatures(recordingData);
+            voiceTemplates[command].push(features);
+
+            // 更新UI
+            const stepElement = document.getElementById(`step-${command}`);
+            stepElement.classList.remove('recording');
+            stepElement.classList.add('completed');
+
+            const count = voiceTemplates[command].length;
+            const statusElement = document.getElementById(`status-${command}`);
+            if (count >= 2) {
+                statusElement.textContent = '已完成';
+            } else {
+                statusElement.textContent = `已完成 ${count}/2`;
+            }
+
+            currentRecordingCommand = null;
+            recordingData = [];
+
+            // 检查是否所有指令都已完成
+            checkTrainingComplete();
+        }
+
+        // 提取声纹特征
+        function extractVoiceFeatures(dataFrames) {
+            if (!dataFrames || dataFrames.length === 0) return null;
+
+            const frameCount = dataFrames.length;
+            const features = {
+                spectrum: [],
+                envelope: [],
+                duration: frameCount
+            };
+
+            // 计算平均频谱
+            const spectrumSize = dataFrames[0].length;
+            const avgSpectrum = new Array(spectrumSize).fill(0);
+
+            for (let i = 0; i < frameCount; i++) {
+                for (let j = 0; j < spectrumSize; j++) {
+                    avgSpectrum[j] += dataFrames[i][j];
+                }
+            }
+
+            for (let j = 0; j < spectrumSize; j++) {
+                avgSpectrum[j] = avgSpectrum[j] / frameCount;
+            }
+
+            features.spectrum = avgSpectrum;
+
+            // 计算音量包络（每帧的平均能量）
+            for (let i = 0; i < frameCount; i++) {
+                const avgEnergy = dataFrames[i].reduce((sum, val) => sum + val, 0) / dataFrames[i].length;
+                features.envelope.push(avgEnergy);
+            }
+
+            return features;
+        }
+
+        // 检查训练是否完成
+        function checkTrainingComplete() {
+            const commands = ['forward', 'backward', 'jump', 'attack'];
+            let allComplete = true;
+
+            for (const cmd of commands) {
+                if (voiceTemplates[cmd].length < 2) {
+                    allComplete = false;
+                    break;
+                }
+            }
+
+            if (allComplete) {
+                document.getElementById('startGameBtn').disabled = false;
+            }
+        }
+
+        // 开始实时识别
+        function startRealtimeRecognition() {
+            realtimeRecognize();
+        }
+
+        // 实时识别循环
+        function realtimeRecognize() {
             if (!voiceEnabled || !analyser) {
-                requestAnimationFrame(analyzeAudio);
+                requestAnimationFrame(realtimeRecognize);
                 return;
             }
 
             analyser.getByteFrequencyData(audioDataArray);
 
-            // 计算当前音量（使用低频部分，更适合语音）
-            let volume = 0;
-            for (let i = 0; i < 20; i++) {
-                volume += audioDataArray[i];
-            }
-            volume = volume / 20 / 255;
+            // 检测是否有声音输入
+            const volume = audioDataArray.slice(0, 50).reduce((sum, val) => sum + val, 0) / 50 / 255;
 
-            // 更新音量历史
-            volumeHistory.push(volume);
-            if (volumeHistory.length > historyLength) {
-                volumeHistory.shift();
-            }
+            if (volume > 0.15) {
+                // 收集当前音频数据帧
+                if (!window.currentAudioBuffer) {
+                    window.currentAudioBuffer = [];
+                }
 
-            // 检测语音开始（音量突然增大）
-            const volumeIncrease = volume - previousVolume;
-            const avgVolume = volumeHistory.reduce((a, b) => a + b, 0) / volumeHistory.length;
+                window.currentAudioBuffer.push(Array.from(audioDataArray));
 
-            if (volumeIncrease > 0.3 && volume > 0.15 && !isSpeaking) {
-                isSpeaking = true;
-                speakStartVolume = volume;
+                // 检测语音结束（音量降低）
+                if (window.currentAudioBuffer.length > 15) {
+                    const recentVolume = window.currentAudioBuffer.slice(-5).map(
+                        frame => frame.slice(0, 50).reduce((sum, val) => sum + val, 0) / 50 / 255
+                    );
+                    const avgRecentVolume = recentVolume.reduce((a, b) => a + b, 0) / recentVolume.length;
 
-                // 根据音量增加的模式识别指令
-                const command = detectCommandByPattern(volumeHistory, volume);
-                if (command) {
-                    executeVoiceCommand(command);
+                    if (avgRecentVolume < 0.1) {
+                        // 语音结束，进行识别
+                        recognizeVoice(window.currentAudioBuffer);
+                        window.currentAudioBuffer = null;
+                    }
                 }
             }
 
-            // 语音结束（音量降低）
-            if (isSpeaking && volume < 0.1 && avgVolume < 0.1) {
-                isSpeaking = false;
+            // 清理过时的缓冲区
+            if (window.currentAudioBuffer && window.currentAudioBuffer.length > 100) {
+                window.currentAudioBuffer = null;
             }
 
-            previousVolume = volume;
-            requestAnimationFrame(analyzeAudio);
+            requestAnimationFrame(realtimeRecognize);
         }
 
-        function detectCommandByPattern(history, currentVolume) {
-            if (history.length < 5) return null;
-
-            const recent = history.slice(-5);
-            const avgIncrease = (recent[4] - recent[0]) / 5;
-            const spike = Math.max(...recent.slice(-3));
-
-            // 基于音量模式和持续时间简单区分指令
-            // "前"：短促，音量快速上升
-            if (avgIncrease > 0.15 && currentVolume > 0.3) {
-                return '前';
-            }
-            // "后"：中等持续
-            if (spike > 0.4 && avgIncrease > 0.08) {
-                return '后';
-            }
-            // "跳"：音量尖峰
-            if (spike > 0.5 && avgIncrease > 0.2) {
-                return '跳';
-            }
-            // "打"：快速连续音量变化
-            if (avgIncrease > 0.05 && spike > 0.25) {
-                return '打';
-            }
-
-            return null;
-        }
-
-        function executeVoiceCommand(command) {
+        // 识别语音
+        function recognizeVoice(audioFrames) {
             const now = Date.now();
             if (now - lastCommandTime < commandCooldown) {
                 return;
             }
-            lastCommandTime = now;
 
-            let detectedAction = '';
+            const features = extractVoiceFeatures(audioFrames);
+            if (!features) return;
 
-            switch (command) {
-                case '前':
-                    player.moveForward();
-                    detectedAction = '向前';
-                    setTimeout(() => player.stop(), 150);
-                    break;
-                case '后':
-                    player.moveBackward();
-                    detectedAction = '向后';
-                    setTimeout(() => player.stop(), 150);
-                    break;
-                case '跳':
-                    player.jump();
-                    detectedAction = '跳跃';
-                    break;
-                case '打':
-                    if (player.attack()) {
-                        checkAttackCollision(player, alien);
-                        detectedAction = '攻击';
+            // 与模板比对
+            const commands = ['forward', 'backward', 'jump', 'attack'];
+            let bestMatch = null;
+            let bestScore = 0;
+
+            for (const cmd of commands) {
+                const templates = voiceTemplates[cmd];
+                for (const template of templates) {
+                    const score = compareFeatures(features, template);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMatch = cmd;
                     }
-                    break;
+                }
             }
 
-            if (detectedAction) {
-                document.getElementById('detectedCommand').textContent = detectedAction;
+            // 阈值判定
+            if (bestScore > 0.6) {
+                executeCommand(bestMatch);
+                lastCommandTime = now;
+            }
+        }
 
-                const actionMap = {
-                    '向前': 'action-forward',
-                    '向后': 'action-backward',
-                    '跳跃': 'action-jump',
-                    '攻击': 'action-attack'
-                };
-                const actionElement = document.getElementById(actionMap[detectedAction]);
-                if (actionElement) {
-                    actionElement.classList.add('active');
-                    setTimeout(() => actionElement.classList.remove('active'), 150);
+        // 比较特征相似度
+        function compareFeatures(features1, features2) {
+            if (!features1 || !features2) return 0;
+
+            // 比较频谱
+            const spectrumScore = compareArrays(features1.spectrum, features2.spectrum);
+
+            // 比较包络（归一化后）
+            const env1 = normalizeArray(features1.envelope);
+            const env2 = normalizeArray(features2.envelope);
+            const envelopeScore = compareArrays(env1, env2);
+
+            // 综合得分
+            return (spectrumScore * 0.7 + envelopeScore * 0.3);
+        }
+
+        // 比较两个数组的相似度
+        function compareArrays(arr1, arr2) {
+            const minLen = Math.min(arr1.length, arr2.length);
+            let diff = 0;
+            let sum = 0;
+
+            for (let i = 0; i < minLen; i++) {
+                diff += Math.abs(arr1[i] - arr2[i]);
+                sum += (arr1[i] + arr2[i]) / 2;
+            }
+
+            return 1 - (diff / (sum + 1));
+        }
+
+        // 归一化数组
+        function normalizeArray(arr) {
+            const max = Math.max(...arr, 1);
+            return arr.map(val => val / max);
+        }
+
+        // 执行指令
+        function executeCommand(command) {
+            const actionMap = {
+                'forward': { action: 'moveForward', label: '向前' },
+                'backward': { action: 'moveBackward', label: '向后' },
+                'jump': { action: 'jump', label: '跳跃' },
+                'attack': { action: 'attack', label: '攻击' }
+            };
+
+            const info = actionMap[command];
+            if (!info) return;
+
+            if (info.action === 'attack') {
+                if (player.attack()) {
+                    checkAttackCollision(player, alien);
                 }
+            } else {
+                player[info.action]();
+                if (info.action === 'moveForward' || info.action === 'moveBackward') {
+                    setTimeout(() => player.stop(), 100);
+                }
+            }
+
+            // 更新UI
+            document.getElementById('detectedCommand').textContent = info.label;
+
+            const uiActionMap = {
+                '向前': 'action-forward',
+                '向后': 'action-backward',
+                '跳跃': 'action-jump',
+                '攻击': 'action-attack'
+            };
+            const actionElement = document.getElementById(uiActionMap[info.label]);
+            if (actionElement) {
+                actionElement.classList.add('active');
+                setTimeout(() => actionElement.classList.remove('active'), 100);
+            }
+        }
+
+        // 完成训练开始游戏
+        function startGameAfterTraining() {
+            document.getElementById('voiceTraining').classList.remove('show');
+            document.getElementById('startBtn').textContent = '声音控制已开启';
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('voiceStatus').textContent = '实时监听中...';
+            document.getElementById('voiceStatus').style.color = '#00FF00';
+
+            // 开始实时识别
+            startRealtimeRecognition();
+
+            if (!gameRunning) {
+                gameRunning = true;
+                gameLoop();
             }
         }
 
         function processVoiceCommand(command) {
+            // 保留此函数作为备用
             const now = Date.now();
             if (now - lastCommandTime < commandCooldown) {
                 return;
@@ -940,11 +1272,11 @@
             if (commandLower.includes('前')) {
                 player.moveForward();
                 detectedAction = '向前';
-                setTimeout(() => player.stop(), 150);
+                setTimeout(() => player.stop(), 100);
             } else if (commandLower.includes('后')) {
                 player.moveBackward();
                 detectedAction = '向后';
-                setTimeout(() => player.stop(), 150);
+                setTimeout(() => player.stop(), 100);
             } else if (commandLower.includes('跳')) {
                 player.jump();
                 detectedAction = '跳跃';
@@ -969,25 +1301,6 @@
                     actionElement.classList.add('active');
                     setTimeout(() => actionElement.classList.remove('active'), 150);
                 }
-            }
-        }
-
-        function startVoiceControl() {
-            initVoiceRecognition();
-            initAudioAnalysis();
-
-            voiceEnabled = true;
-            if (recognition) {
-                recognition.start();
-            }
-            document.getElementById('startBtn').textContent = '声音控制已开启';
-            document.getElementById('startBtn').disabled = true;
-            document.getElementById('voiceStatus').textContent = '实时监听中...';
-            document.getElementById('voiceStatus').style.color = '#00FF00';
-
-            if (!gameRunning) {
-                gameRunning = true;
-                gameLoop();
             }
         }
 
